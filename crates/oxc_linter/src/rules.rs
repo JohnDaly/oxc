@@ -92,6 +92,7 @@ mod eslint {
     pub mod no_prototype_builtins;
     pub mod no_redeclare;
     pub mod no_regex_spaces;
+    pub mod no_restricted_imports;
     pub mod no_return_await;
     pub mod no_script_url;
     pub mod no_self_assign;
@@ -433,6 +434,7 @@ oxc_macros::declare_all_lint_rules! {
     eslint::no_prototype_builtins,
     eslint::no_redeclare,
     eslint::no_regex_spaces,
+    eslint::no_restricted_imports,
     eslint::no_return_await,
     eslint::no_script_url,
     eslint::no_self_assign,
