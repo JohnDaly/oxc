@@ -28,23 +28,27 @@ pub struct TestRunner {
     options: TestRunnerOptions,
 }
 
-fn root() -> PathBuf {
-    project_root().join("tasks/coverage/babel/packages")
+fn babel_root() -> PathBuf {
+    project_root().join("tasks").join("coverage").join("babel")
 }
 
-fn oxc_test_root() -> PathBuf {
-    project_root().join("tasks/transform_conformance/tests")
+fn packages_root() -> PathBuf {
+    babel_root().join("packages")
 }
 
 fn snap_root() -> PathBuf {
     project_root().join("tasks/transform_conformance")
 }
 
+fn oxc_test_root() -> PathBuf {
+    snap_root().join("tests")
+}
+
 fn fixture_root() -> PathBuf {
     snap_root().join("fixtures")
 }
 
-const CASES: &[&str] = &[
+const PLUGINS: &[&str] = &[
     // // ES2024
     // "babel-plugin-transform-unicode-sets-regex",
     // // ES2022
@@ -103,6 +107,20 @@ const CASES: &[&str] = &[
     // "babel-plugin-proposal-decorators",
 ];
 
+pub(crate) const PLUGINS_NOT_SUPPORTED_YET: &[&str] = &[
+    "proposal-decorators",
+    "transform-arrow-functions",
+    "transform-class-properties",
+    "transform-classes",
+    "transform-modules-commonjs",
+    "transform-object-rest-spread",
+    "transform-optional-chaining",
+    "transform-parameters",
+    "transform-private-methods",
+    "transform-property-literals",
+    "transform-react-constant-elements",
+];
+
 const EXCLUDE_TESTS: &[&str] = &["babel-plugin-transform-typescript/test/fixtures/enum"];
 
 const CONFORMANCE_SNAPSHOT: &str = "babel.snap.md";
@@ -129,7 +147,7 @@ impl TestRunner {
     /// # Panics
     pub fn run(self) {
         for (root, snapshot, exec_snapshot) in &[
-            (root(), CONFORMANCE_SNAPSHOT, EXEC_SNAPSHOT),
+            (packages_root(), CONFORMANCE_SNAPSHOT, EXEC_SNAPSHOT),
             (oxc_test_root(), OXC_CONFORMANCE_SNAPSHOT, OXC_EXEC_SNAPSHOT),
         ] {
             let (transform_paths, exec_files) =
@@ -151,11 +169,12 @@ impl TestRunner {
         root: &Path,
         filter: Option<&String>,
     ) -> (IndexMap<String, Vec<TestCaseKind>>, IndexMap<String, Vec<TestCaseKind>>) {
+        let cwd = babel_root();
         // use `IndexMap` to keep the order of the test cases the same in insert order.
         let mut transform_files = IndexMap::<String, Vec<TestCaseKind>>::new();
         let mut exec_files = IndexMap::<String, Vec<TestCaseKind>>::new();
 
-        for case in CASES {
+        for case in PLUGINS {
             let root = root.join(case).join("test/fixtures");
             let (mut transform_paths, mut exec_paths): (Vec<TestCaseKind>, Vec<TestCaseKind>) =
                 WalkDir::new(root)
@@ -171,7 +190,7 @@ impl TestRunner {
                         if EXCLUDE_TESTS.iter().any(|p| path.to_string_lossy().contains(p)) {
                             return None;
                         }
-                        TestCaseKind::from_path(path)
+                        TestCaseKind::new(&cwd, path)
                             .filter(|test_case| !test_case.skip_test_case())
                     })
                     .partition(|p| matches!(p, TestCaseKind::Transform(_)));

@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 use serde_json::Value;
@@ -7,12 +7,15 @@ use serde_json::Value;
 #[derive(Debug, Default, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BabelOptions {
+    pub cwd: Option<PathBuf>,
     #[serde(rename = "BABEL_8_BREAKING")]
     pub babel_8_breaking: Option<bool>,
     pub source_type: Option<String>,
     pub throws: Option<String>,
     #[serde(default)]
     pub plugins: Vec<Value>, // Can be a string or an array
+    #[serde(default)]
+    pub presets: Vec<Value>, // Can be a string or an array
     #[serde(default)]
     pub allow_return_outside_function: bool,
     #[serde(default)]
@@ -21,6 +24,23 @@ pub struct BabelOptions {
     pub allow_undeclared_exports: bool,
     #[serde(default)]
     pub assumptions: Value,
+    /// Babel test helper for running tests on specific operating systems
+    pub os: Option<Vec<TestOs>>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TestOs {
+    Linux,
+    Win32,
+    Windows,
+    Darwin,
+}
+
+impl TestOs {
+    pub fn is_windows(&self) -> bool {
+        matches!(self, Self::Win32 | Self::Windows)
+    }
 }
 
 impl BabelOptions {
@@ -88,12 +108,21 @@ impl BabelOptions {
     /// * `Some<Some<Value>>` if the plugin exists with a config
     /// * `None` if the plugin does not exist
     pub fn get_plugin(&self, name: &str) -> Option<Option<Value>> {
-        self.plugins.iter().find_map(|v| match v {
+        self.plugins.iter().find_map(|v| Self::get_value(v, name))
+    }
+
+    pub fn get_preset(&self, name: &str) -> Option<Option<Value>> {
+        self.presets.iter().find_map(|v| Self::get_value(v, name))
+    }
+
+    #[allow(clippy::option_option)]
+    fn get_value(value: &Value, name: &str) -> Option<Option<Value>> {
+        match value {
             Value::String(s) if s == name => Some(None),
             Value::Array(a) if a.first().and_then(Value::as_str).is_some_and(|s| s == name) => {
                 Some(a.get(1).cloned())
             }
             _ => None,
-        })
+        }
     }
 }
