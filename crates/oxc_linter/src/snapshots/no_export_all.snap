@@ -1,0 +1,11 @@
+---
+source: crates/oxc_linter/src/tester.rs
+expression: no_export_all
+---
+  ⚠ oxc(no-export-all): Do not export from modules using export-all syntax
+   ╭─[export-star/entry.js:1:1]
+ 1 │ export * as largeModule from "./models";
+   · ────────────────────────────────────────
+   ╰────
+  help: Avoid re-exporting * from a module, it leads to unused imports and prevents treeshaking.
+        Number of dependencies 2
