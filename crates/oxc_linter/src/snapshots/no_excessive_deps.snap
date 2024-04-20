@@ -1,0 +1,34 @@
+---
+source: crates/oxc_linter/src/tester.rs
+expression: no_excessive_deps
+---
+  ⚠ eslint-plugin-import(no-excessive-deps): Module has excessive dependencies
+  help: fixtures/import/no-excessive-deps/entry.js has 4 dependencies, exceeding the maximum limit of 3
+        fixtures/import/no-excessive-deps/flat-deps/entry.js
+        fixtures/import/no-excessive-deps/flat-deps/leaf-a.js
+        fixtures/import/no-excessive-deps/flat-deps/leaf-b.js
+        fixtures/import/no-excessive-deps/flat-deps/leaf-c.js
+
+  ⚠ eslint-plugin-import(no-excessive-deps): Module has excessive dependencies
+  help: fixtures/import/no-excessive-deps/entry.js has 4 dependencies, exceeding the maximum limit of 3
+        fixtures/import/no-excessive-deps/nested-deps/branch-a.js
+        fixtures/import/no-excessive-deps/nested-deps/entry.js
+        fixtures/import/no-excessive-deps/nested-deps/leaf-a.js
+        fixtures/import/no-excessive-deps/nested-deps/leaf-b.js
+
+  ⚠ eslint-plugin-import(no-excessive-deps): Module has excessive dependencies
+  help: fixtures/import/no-excessive-deps/entry.js has 3 dependencies, exceeding the maximum limit of 1
+        fixtures/import/no-excessive-deps/type-only-deps/entry.ts
+        fixtures/import/no-excessive-deps/type-only-deps/types-a.ts
+        fixtures/import/no-excessive-deps/type-only-deps/types-b.ts
+
+  ⚠ eslint-plugin-import(no-excessive-deps): Module has excessive dependencies
+  help: fixtures/import/no-excessive-deps/entry.js has 3 dependencies, exceeding the maximum limit of 2
+        fixtures/import/no-excessive-deps/some-type-deps/entry.ts
+        fixtures/import/no-excessive-deps/some-type-deps/leaf-a.ts
+        fixtures/import/no-excessive-deps/some-type-deps/types.ts
+
+  ⚠ eslint-plugin-import(no-excessive-deps): Module has excessive dependencies
+  help: fixtures/import/no-excessive-deps/entry.js has 2 dependencies, exceeding the maximum limit of 1
+        fixtures/import/no-excessive-deps/some-type-deps/entry.ts
+        fixtures/import/no-excessive-deps/some-type-deps/leaf-a.ts
