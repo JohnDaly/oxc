@@ -1,6 +1,13 @@
 //! [ECMAScript Module Record](https://tc39.es/ecma262/#sec-abstract-module-records)
 
-use std::{fmt, hash::BuildHasherDefault, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashSet,
+    ffi::OsStr,
+    fmt,
+    hash::BuildHasherDefault,
+    path::{Component, PathBuf},
+    sync::Arc,
+};
 
 use dashmap::DashMap;
 use indexmap::IndexMap;
@@ -87,6 +94,69 @@ impl ModuleRecord {
     pub fn new(resolved_absolute_path: PathBuf) -> Self {
         Self { resolved_absolute_path, ..Self::default() }
     }
+
+    fn traverse(
+        &self,
+        state: &mut ModuleRecordTraversalState,
+        module_record: &ModuleRecord,
+        options: &ModuleRecordTraversalOptions,
+    ) {
+        if options.ignore_node_modules
+            && module_record
+                .resolved_absolute_path
+                .components()
+                .any(|c| matches!(c, Component::Normal(p) if p == OsStr::new("node_modules")))
+        {
+            return;
+        }
+
+        for module_record_ref in &module_record.loaded_modules {
+            let resolved_absolute_path = &module_record_ref.resolved_absolute_path;
+            if options.ignore_types {
+                let was_imported_as_type = &module_record
+                    .import_entries
+                    .iter()
+                    .filter(|entry| entry.module_request.name() == module_record_ref.key())
+                    .all(|entry| entry.is_type);
+                if *was_imported_as_type {
+                    continue;
+                }
+            }
+            if !state.traversed.insert(resolved_absolute_path.clone()) {
+                continue;
+            }
+            state.stack.push((module_record_ref.key().clone(), resolved_absolute_path.clone()));
+            self.traverse(state, module_record_ref.value(), options);
+            state.stack.pop();
+        }
+    }
+
+    pub fn traverse_loaded_modules(
+        &self,
+        options: ModuleRecordTraversalOptions,
+    ) -> HashSet<PathBuf> {
+        let mut state = ModuleRecordTraversalState::default();
+        self.traverse(&mut state, &self, &options);
+        state.traversed
+    }
+}
+
+#[derive(Debug)]
+pub struct ModuleRecordTraversalOptions {
+    pub ignore_types: bool,
+    pub ignore_node_modules: bool,
+}
+
+impl Default for ModuleRecordTraversalOptions {
+    fn default() -> Self {
+        Self { ignore_types: false, ignore_node_modules: true }
+    }
+}
+
+#[derive(Debug, Default)]
+struct ModuleRecordTraversalState {
+    traversed: HashSet<PathBuf>,
+    stack: Vec<(CompactStr, PathBuf)>,
 }
 
 impl fmt::Debug for ModuleRecord {
